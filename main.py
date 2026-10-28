@@ -27,6 +27,9 @@ def get_db_connection():
         print("🔥 ERROR: DATABASE_URL environment variable is missing on Render!")
         raise HTTPException(status_code=500, detail="DATABASE_URL environment variable is not set.")
     
+    # Strip any accidental leading/trailing whitespace or newlines from Render UI
+    db_url = db_url.strip()
+    
     try:
         # Safely extract the password regardless of special characters or URL formatting
         parsed = urlparse(db_url)
@@ -42,6 +45,11 @@ def get_db_connection():
 
         if not password:
             password = db_url
+
+        password = password.strip()
+        
+        # Safe debug print (Shows length and first/last char to verify nothing got clipped)
+        print(f"DEBUG: Extracted password length = {len(password)}, starts with '{password[:1]}', ends with '{password[-1]}'")
 
         # Hardcode the correct project-qualified username and pooler host so it can never be misconfigured
         return psycopg2.connect(
