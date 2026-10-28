@@ -20,13 +20,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Read the full connection string securely from the environment
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 def get_db_connection():
-    if not DATABASE_URL:
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        print("🔥 ERROR: DATABASE_URL environment variable is missing on Render!")
         raise HTTPException(status_code=500, detail="DATABASE_URL environment variable is not set.")
-    return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    
+    try:
+        return psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+    except Exception as e:
+        print(f"🔥 PSYCOPG2 CONNECTION FAILURE: {repr(e)}")
+        raise e
 
 @app.get("/")
 def health_check():
@@ -40,6 +44,7 @@ def health_check():
         conn.close()
         return {"status": "healthy", "database_connected": True, "total_stations": count}
     except Exception as e:
+        print(f"🔥 HEALTH CHECK FAILED: {repr(e)}")
         raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
 
 @app.get("/stations/nearest")
@@ -102,6 +107,7 @@ def get_nearest_stations(
             "stations": stations
         }
     except Exception as e:
+        print(f"🔥 NEAREST STATIONS QUERY ERROR: {repr(e)}")
         raise HTTPException(status_code=500, detail=f"Query error: {str(e)}")
     finally:
         cursor.close()
@@ -139,6 +145,7 @@ def get_station_details(station_id: str):
     except HTTPException as he:
         raise he
     except Exception as e:
+        print(f"🔥 STATION DETAILS QUERY ERROR: {repr(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching station: {str(e)}")
     finally:
         cursor.close()
