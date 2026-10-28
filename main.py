@@ -20,18 +20,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Supabase Pooler Database Parameters
-DB_PARAMS = {
-    "dbname": "postgres",
-    "user": "postgres.fnvyxscmxgocxnueabld",
-    "password": "%40F4c3b00kt43z3b1",
-    "host": "aws-0-eu-west-1.pooler.supabase.com",
-    "port": 6543,
-    "sslmode": "require"
-}
+# Read the full connection string securely from the environment
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
-    return psycopg2.connect(**DB_PARAMS, cursor_factory=psycopg2.extras.RealDictCursor)
+    if not DATABASE_URL:
+        raise HTTPException(status_code=500, detail="DATABASE_URL environment variable is not set.")
+    return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
 
 @app.get("/")
 def health_check():
