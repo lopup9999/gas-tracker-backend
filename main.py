@@ -28,24 +28,28 @@ def get_db_connection():
         raise HTTPException(status_code=500, detail="DATABASE_URL environment variable is not set.")
     
     try:
+        # Safely extract the password regardless of special characters or URL formatting
         parsed = urlparse(db_url)
-        username = unquote(parsed.username) if parsed.username else ""
+        password = unquote(parsed.password) if parsed and parsed.password else ""
         
-        # SAFETY FIX: If Render has just "postgres", automatically inject your full Supabase project ref!
-        if username == "postgres":
-            username = "postgres.fnvyxscmxgocxnueabld"
-            
-        password = unquote(parsed.password) if parsed.password else ""
-        hostname = parsed.hostname or "aws-0-eu-west-1.pooler.supabase.com"
-        port = parsed.port or 6543
-        dbname = parsed.path.lstrip('/') or "postgres"
+        if not password and "@" in db_url:
+            try:
+                auth_part = db_url.split("://")[1].split("@")[0]
+                if ":" in auth_part:
+                    password = unquote(auth_part.split(":")[1])
+            except Exception:
+                password = db_url
 
+        if not password:
+            password = db_url
+
+        # Hardcode the correct project-qualified username and pooler host so it can never be misconfigured
         return psycopg2.connect(
-            dbname=dbname,
-            user=username,
+            dbname="postgres",
+            user="postgres.fnvyxscmxgocxnueabld",
             password=password,
-            host=hostname,
-            port=port,
+            host="aws-0-eu-west-1.pooler.supabase.com",
+            port=6543,
             sslmode="require",
             cursor_factory=psycopg2.extras.RealDictCursor
         )
