@@ -1,9 +1,12 @@
+Python
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
 import psycopg2.extras
 from typing import Optional
 import os
+from urllib.parse import unquote, urlparse
 
 app = FastAPI(
     title="Euro Fuel Tracker API",
@@ -27,7 +30,23 @@ def get_db_connection():
         raise HTTPException(status_code=500, detail="DATABASE_URL environment variable is not set.")
     
     try:
-        return psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+        # Safely parse the connection string components to avoid URL-encoding issues with special characters
+        parsed = urlparse(db_url)
+        username = unquote(parsed.username) if parsed.username else ""
+        password = unquote(parsed.password) if parsed.password else ""
+        hostname = parsed.hostname
+        port = parsed.port or 6543
+        dbname = parsed.path.lstrip('/') or "postgres"
+
+        return psycopg2.connect(
+            dbname=dbname,
+            user=username,
+            password=password,
+            host=hostname,
+            port=port,
+            sslmode="require",
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
     except Exception as e:
         print(f"🔥 PSYCOPG2 CONNECTION FAILURE: {repr(e)}")
         raise e
