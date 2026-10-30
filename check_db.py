@@ -3,7 +3,7 @@ import psycopg2
 DB_PARAMS = {
     "dbname": "postgres",
     "user": "postgres.fnvyxscmxgocxnueabld",
-    "password": "%40F4c3b00kt43z3b1",
+    "password": "ubunfi311m9999",
     "host": "aws-0-eu-west-1.pooler.supabase.com",
     "port": 6543,
     "sslmode": "require"

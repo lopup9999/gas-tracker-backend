@@ -110,11 +110,12 @@ def get_nearest_stations(
                 ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, 
                 %s
             )
-            AND LOWER(fp.fuel_type) = LOWER(%s)
+            AND fp.fuel_type ILIKE %s
             ORDER BY fp.price_eur ASC
             LIMIT %s;
         """
-        cursor.execute(query, (lng, lat, lng, lat, radius_meters, fuel_type, limit))
+        search_term = f"%{fuel_type}%"
+        cursor.execute(query, (lng, lat, lng, lat, radius_meters, search_term, limit))
         stations = cursor.fetchall()
         
         return {
